@@ -4,7 +4,7 @@ import { createContext } from 'react';
 export const ApiContext = createContext('https://restapi.fr/api/recipes');
 
 // Owner du contrat
-export const Owner = "0x77B69Aa3c52F2F97A0643D81C0921dF48E18c7F3";
+export const Owner = "0x3Cb734Df6b203dDAf6e9C6Fe9ca744016b0c9BB5";
 
 // isOwner
 export const IsOwner = false;
