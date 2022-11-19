@@ -9,9 +9,6 @@ function Header(props) {
             <div className="flex-fill">
                 <img src={logo} alt="Logo" />
             </div>
-
-            <h5>Connecté avec le compte {props.account} !</h5>
-
         </header >
     );
 }

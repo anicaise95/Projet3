@@ -7,10 +7,8 @@ function Proposals(props) {
         props.onChange(value);
     }
 
-    console.log("Je rentre dans le component Proposals");
-    console.log("votedProposalId : " + props.votedProposalId);
-    console.log("props.newStatus : " + props.newStatus);
-    console.log("props.setProposalsArray : " + props.setProposalsArray);
+    console.log("Le voter a déjà voté pour : " + props.votedProposalId);
+    console.log("Liste des propositions : " + props.setProposalsArray);
 
     return (
         <>

@@ -39,29 +39,39 @@ export default function TimelineComponent() {
     const [previousStatus, setPreviousStatus] = useState(0);
     const [newStatus, setNewStatus] = useState(0);
     const [selectedProposal, setSelectedProposal] = useState(0);
-
+    const [proposalsArrayCount, setProposalsArrayCount] = useState(0);
 
     const getCurrentkWorkflowStatus = async () => {
         const currentWorkflow = await contract.methods.workflowStatus().call({ from: accounts[0] });
-        console.log("currentWorkflow : " + currentWorkflow);
         setNewStatus(currentWorkflow);
-        console.log("newStatus : " + newStatus);
+        console.log("Statut actuel : " + newStatus);
     }
 
+    // Si le depuillement est fait on affiche le vainquer
     useEffect(() => {
-        console.log("useEffect2");
-        getCurrentkWorkflowStatus();
-        if (newStatus == 0) {
-            setInputAddVoter('');
+        console.log("Détection d'un nouveau gagnant >> getWinner ");
+        if (newStatus == 5) {
+            getWinner();
+        } else {
+            fetchProposalsArray();
         }
     }, [newStatus]);
 
+    // Si le tableau de propositions augmente on raffraichit la liste des propositions
+    useEffect(() => {
+        console.log("Détection d'une nouvelle proposition >> Récupération des propositions ");
+        if (newStatus >= 1) {
+            fetchProposalsArray();
+        }
+    }, [proposalsArrayCount, selectedProposal]);
+
+    // 
     useEffect(() => {
         (async function () {
             setVoter(undefined);
+            getCurrentkWorkflowStatus();
 
             if (!isOwner) {
-
                 try {
                     // Check si l'utilisateur est enregistré sur la whitelist
                     getVoter();
@@ -69,12 +79,16 @@ export default function TimelineComponent() {
 
                     if (voter != undefined) {
                         console.log("Compte enregistré sur la whiteList : " + voter);
-                        if (newStatus >= 0) {
+                        if (newStatus >= 1) {
                             fetchProposalsArray();
                         }
+                        /*if (newStatus == 5) {
+                            getWinner();
+                        }*/
                     } else {
                         console.log("Compte absent de la whitelist");
                     }
+
                 } catch (error) {
                     toast.current.show({ severity: 'error', summary: 'Updated', detail: 'Vous n\'êtes pas enregistré par le owner' });
                     console.log(accounts[0] + " n'est pas enregistré");
@@ -87,13 +101,12 @@ export default function TimelineComponent() {
 
 
     // Traitement du workflow
-    async function checkWorkflowStatus(method, isAfterCallMethod) {
+    async function checkWorkflowStatus(method) {
         try {
             const workflowStatus = await contract.methods.workflowStatus().call({ from: accounts[0] });
-            if (isAfterCallMethod) {
-                toast.current.show({ severity: 'success', summary: 'Bravo !', detail: 'La modification a bien été prise en compte' });
-            }
-            console.log((isAfterCallMethod ? "Après " : "Avant ") + method + " : " + workflowStatus);
+            setNewStatus(workflowStatus);
+            toast.current.show({ severity: 'info', summary: 'Changement de statut', detail: 'La modification a bien été prise en compte' });
+            console.log("Nouveau statut : " + workflowStatus);
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: 'Une erreur est survenue lors de la mise à jour du workflow' });
         }
@@ -116,29 +129,24 @@ export default function TimelineComponent() {
 
     const getWinner = async () => {
         try {
-            checkWorkflowStatus("winningProposalID", 0);
+            // Index de la proposition ayant reçue le plus devotes
             const winningProposalID = await contract.methods.winningProposalID().call({ from: accounts[0] });
             console.log('winningProposalID :' + winningProposalID);
-
-            winner = await contract.methods.getOneProposal(winningProposalID).call({ from: accounts[0] });
-            setWinner(winner);
-            //console.log('winningProposal : ' + winningProposal);
-            //winner = winningProposal[0];
-
-            console.log('winner : ' + winner);
-            checkWorkflowStatus("winningProposalID", 1);
-            return winner;
+            // Récupération de la proposition correspondante
+            const proposal = await contract.methods.getOneProposal(winningProposalID).call({ from: accounts[0] });
+            const desc = proposal.description;
+            const nbVoix = proposal.voteCount;
+            setWinner(desc + " [ " + nbVoix + " voix ]");
+            console.log('La proposition gagnante est : ' + winner);
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: 'Une erreur est survenue lors du dépouillement' });
         }
     }
 
-
-
     // Ecriture sur la blockchain
 
     async function addVoter(inputAddVoter) {
-        console.log("Adresse du voter : " + inputAddProposal);
+        console.log("Voter à ajouter à la whitelist : " + inputAddProposal);
         try {
             // Ici le call avant le send permet de recupérer le require
             await contract.methods.addVoter(inputAddVoter).call({ from: accounts[0] });
@@ -170,6 +178,9 @@ export default function TimelineComponent() {
             // Ici le call avant le send permet de recupérer le require
             await contract.methods.addProposal(inputAddProposal).call({ from: accounts[0] });
             await contract.methods.addProposal(inputAddProposal).send({ from: accounts[0] });
+            const tmpProposalsArrayCount = await contract.methods.getProposalsArrayCount().call({ from: accounts[0] });
+            setProposalsArrayCount(tmpProposalsArrayCount);
+
             toast.current.show({ severity: 'info', summary: 'Information', detail: 'Transaction en cours' });
             console.log("Nouvelle proposition : " + inputAddProposal);
         } catch (error) {
@@ -190,17 +201,16 @@ export default function TimelineComponent() {
             setInputAddProposal('');
             toast.current.show({ severity: 'success', summary: 'Transaction terminée !', detail: 'Votre proposition a été prise en compte' });
             console.log("Proposition acceptée (Id " + event.returnValues[0] + ")");
-            fetchProposalsArray();
         });
 
     async function fetchProposalsArray() {
-        console.log("Récupérations des propositions");
         try {
             if (!isOwner) {
                 // Impossible de récupérer un tableau complet en solidity, il faut passer par un index 
                 // Nombre d'élements dans le tableau
-                const proposalsArrayCount = await contract.methods.getProposalsArrayCount().call({ from: accounts[0] });
-                console.log("Nombre de propositions effectuées : " + proposalsArrayCount);
+                const count = await contract.methods.getProposalsArrayCount().call({ from: accounts[0] });
+                setProposalsArrayCount(count);
+                console.log("Récupérations des propositions déjà proposées : " + proposalsArrayCount + " créées");
 
                 // On reconstruit le tableau en allant récupérer une par une les proposition
                 const proposalsArray = Array();
@@ -238,21 +248,22 @@ export default function TimelineComponent() {
     }
     contract.events.Voted(() => { })
         .on('data', function (event) {
-            const address = event.returnValues[0];
+            /*const myAddress = event.returnValues[0];
+            console.log(myAddress);
             const selectedProposalId = event.returnValues[1];
-            fetchProposalsArray();
-            if (selectedProposalId > 0)
-                toast.current.show({ severity: 'success', summary: { address }, detail: 'Votre vote a bien été prise en compte' });
-            else
-                toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "Erreur technique ! Le vote n'a pu être pris en compte" });
+            console.log(selectedProposalId);
+            fetchProposalsArray();*/
+            // if (selectedProposalId > 0)
+            toast.current.show({ severity: 'success', summary: 'Info', detail: 'Votre vote a bien été prise en compte' });
+            //else
+            // toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "Erreur technique ! Le vote n'a pu être pris en compte" });
         })
 
     const startProposalsRegistering = async () => {
         try {
-            checkWorkflowStatus("startProposalsRegistering", 0);
             await contract.methods.startProposalsRegistering().call({ from: accounts[0] });
             await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
-            checkWorkflowStatus("startProposalsRegistering", 1);
+            checkWorkflowStatus("startProposalsRegistering");
         } catch (error) {
             if (error.message.includes("Registering proposals cant be started now")) {
                 toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "La session d'enregistrement des propositions ne peut commencer maintenant !" });
@@ -263,10 +274,9 @@ export default function TimelineComponent() {
     const endProposalsRegistering = async () => {
 
         try {
-            checkWorkflowStatus("endProposalsRegistering", 0);
             await contract.methods.endProposalsRegistering().call({ from: accounts[0] });
             await contract.methods.endProposalsRegistering().send({ from: accounts[0] });
-            checkWorkflowStatus("endProposalsRegistering", 1);
+            checkWorkflowStatus("endProposalsRegistering");
         } catch (error) {
             if (error.message.includes("Registering proposals havent started yet")) {
                 toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "La session d'enregistrement des propositions n'a pas commencé' !" });
@@ -276,10 +286,9 @@ export default function TimelineComponent() {
 
     const startVotingSession = async () => {
         try {
-            checkWorkflowStatus("startVotingSession", 0);
             await contract.methods.startVotingSession().call({ from: accounts[0] });
             await contract.methods.startVotingSession().send({ from: accounts[0] });
-            checkWorkflowStatus("startVotingSession", 1);
+            checkWorkflowStatus("startVotingSession");
         } catch (error) {
             if (error.message.includes("Registering proposals phase is not finished")) {
                 toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "La session d'enregistrement des votes ne peut commencer maintenant !" });
@@ -289,10 +298,9 @@ export default function TimelineComponent() {
 
     const endVotingSession = async () => {
         try {
-            checkWorkflowStatus("endVotingSession", 0);
             await contract.methods.endVotingSession().call({ from: accounts[0] });
             await contract.methods.endVotingSession().send({ from: accounts[0] });
-            checkWorkflowStatus("endVotingSession", 1);
+            checkWorkflowStatus("endVotingSession");
         } catch (error) {
             if (error.message.includes("Voting session havent started yet")) {
                 toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "La session d'enregistrement des votes n'a pas commencé !" });
@@ -302,10 +310,9 @@ export default function TimelineComponent() {
 
     const tallyVotes = async () => {
         try {
-            checkWorkflowStatus("tallyVotes", 0);
             await contract.methods.tallyVotes().call({ from: accounts[0] });
             await contract.methods.tallyVotes().send({ from: accounts[0] });
-            checkWorkflowStatus("tallyVotes", 1);
+            checkWorkflowStatus("tallyVotes");
         } catch (error) {
             if (error.message.includes("Current status is not voting session ended")) {
                 toast.current.show({ severity: 'error', summary: 'Ouchhh ..', detail: "La session d'enregistrement des votes n'est pas terminée !" });
@@ -349,22 +356,13 @@ export default function TimelineComponent() {
             console.log('Error:', error, receipt);
         });
 
-    /*
-    useEffect(() => {
-        (async function () {
-            getWinner();
-        })();
-
-    }, []);*/
 
     // ********************* Timeline *****************************
-
-    // TODO : il va falloir gérer la color active/inactive si l'étape est passée ou non
     const events = [
-        { status: 'Registring', date: '15/10/2020 10:30', icon: 'pi pi-cog', color: `${(newStatus == 0) ? activeColor : inactiveColor}` },
-        { status: 'Proposals', date: '15/10/2020 14:00', icon: 'pi pi-cog', color: `${(newStatus == 1) ? activeColor : inactiveColor}` },
-        { status: 'Voting', date: '15/10/2020 16:15', icon: 'pi pi-cog', color: `${(newStatus == 2 || newStatus == 3) ? activeColor : inactiveColor}` },
-        { status: 'Winner', date: '16/10/2020 10:00', icon: 'pi pi-check', color: `${(newStatus == 4) ? activeColor : inactiveColor}` }
+        { status: 'Registring', date: 'Enregistrement des électeurs sur la whitelist', icon: 'pi pi-cog', color: `${(newStatus == 0) ? activeColor : inactiveColor}` },
+        { status: 'Proposals', date: 'Enregistrement des propositions', icon: 'pi pi-cog', color: `${(newStatus == 1) ? activeColor : inactiveColor}` },
+        { status: 'Voting', date: 'Vote pour une proposition', icon: 'pi pi-cog', color: `${(newStatus == 2 || newStatus == 3) ? activeColor : inactiveColor}` },
+        { status: 'Winner', date: 'Désignation de la proposition gagnante', icon: 'pi pi-check', color: `${(newStatus == 4 || newStatus == 5) ? activeColor : inactiveColor}` }
     ];
 
     // Icone à chaque étape du workflow
@@ -381,15 +379,20 @@ export default function TimelineComponent() {
     // ********************* Evenements JS *****************************
 
     const handleInputAddVoterChange = e => {
-        //if (/^0x[a-fA-F0-9]{40}$/.test(e.target.value)) {
         setInputAddVoter(e.target.value);
-        //}
     };
     const handleInputAddProposalChange = e => {
         setInputAddProposal(e.target.value);
     };
 
     const handleButtonAddVoterClick = async e => {
+        const regex = /^0x[0-9a-f]{40}$/g;
+        if (inputAddVoter.match(regex)) {
+            return true;
+        } else {
+            setInputAddVoter('');
+        }
+
         if (inputAddVoter === "") {
             alert("Merci de renseigner l'adresse d'un électeur");
             return;
@@ -483,7 +486,7 @@ export default function TimelineComponent() {
                             newStatus == 0 &&
                             <>
                                 <div className="field">
-                                    <label htmlFor="voterAdress" className="block">Ajouter un électeur sur la whitelist</label>
+                                    <label htmlFor="voterAdress" className="block">Ajouter un électeur sur la whitelist (adresse Ethereum)</label>
                                     <InputText id="voterAdress" value={inputAddVoter} onChange={handleInputAddVoterChange} aria-describedby="voterAdress-help" className="block" placeholder="0x..." />
                                     <small id="voterAdress-help" className="block">Entrer l'adresse du voter</small>
                                 </div>
@@ -492,7 +495,7 @@ export default function TimelineComponent() {
                         }
                         {
                             newStatus >= 1 &&
-                            <span><b>La session est terminée</b></span>
+                            <div className="mb-5"><b>La session est terminée</b></div>
                         }
                     </>
                 }
@@ -501,9 +504,9 @@ export default function TimelineComponent() {
                     <>
                         {
                             newStatus == 0 &&
-                            <span><b>Vous êtes enregistré sur la liste des électeurs</b>
+                            <div className="mb-5"><b>Vous êtes enregistré sur la liste des électeurs</b>
                                 <i class="fa-duotone fa-circle-check"></i>
-                            </span>
+                            </div>
                         }
                         {
                             newStatus >= 1 &&
@@ -515,16 +518,16 @@ export default function TimelineComponent() {
                     item.status === 'Proposals' && isOwner &&
                     <>
                         {
-                            (newStatus == 0 || newStatus == 1) &&
-                            <SplitButton label="Actions" disabled={(newStatus == 0 || newStatus == 1) ? false : true} model={items1} onClick={startProposalsRegistering} className="Success p-button-raised p-button-success p-button-text mr-2 mb-2"></SplitButton>
-                        }
-                        {
                             (newStatus == 1) &&
-                            <div><b>La session est ouverte</b></div>
+                            <div className="mb-5"><b>La session est ouverte</b></div>
                         }
                         {
                             newStatus >= 2 &&
-                            <span><b>La session est terminée</b></span>
+                            <div className="mb-5"><b>La session est terminée</b></div>
+                        }
+                        {
+                            (newStatus == 0 || newStatus == 1) &&
+                            <SplitButton label="Actions" disabled={(newStatus == 0 || newStatus == 1) ? false : true} model={items1} onClick={startProposalsRegistering} className="Success p-button-raised p-button-success p-button-text mr-2 mb-2"></SplitButton>
                         }
                     </>
                 }
@@ -533,14 +536,14 @@ export default function TimelineComponent() {
                     <>
                         {
                             newStatus == 0 &&
-                            <span><b>La session n'est pas encore ouverte</b></span>
+                            <div className="mb-5"><b>La session n'est pas encore ouverte</b></div>
                         }
                         {
                             newStatus == 1 &&
                             <>
-                                <div className="field">
-                                    <label htmlFor="proposal" className="block">Proposition :</label>
-                                    <InputText id="proposal" value={inputAddProposal} onChange={handleInputAddProposalChange} aria-describedby="proposal-help" className="block" />
+                                <div className="d-flex flex-row align-items-left"></div>
+                                <div className="field " align="left">
+                                    <InputText id="proposal" value={inputAddProposal} onChange={handleInputAddProposalChange} aria-describedby="proposal-help" className="block" width="200" />
                                     <small id="proposal-help" className="block">Entrer votre proposition de vote</small>
                                 </div>
                                 <Button label="Valider" onClick={handleButtonAddProposalClick} icon="pi pi-check" iconPos="right" />
@@ -548,7 +551,7 @@ export default function TimelineComponent() {
                         }
                         {
                             newStatus >= 2 &&
-                            <span><b>La session est terminée</b></span>
+                            <div className="mb-5"><b>La session est terminée</b></div>
                         }
 
                     </>
@@ -571,7 +574,7 @@ export default function TimelineComponent() {
                         {
                             newStatus <= 3 &&
                             <div className="field">
-                                <SplitButton label="Actions" disabled={(newStatus == 2 || newStatus == 3) ? false : false} model={items2} onClick={save} className="Success p-button-raised p-button-success p-button-text mr-2 mb-2"></SplitButton>
+                                <SplitButton label="Actions" disabled={(newStatus == 2 || newStatus == 3) ? false : true} model={items2} onClick={save} className="Success p-button-raised p-button-success p-button-text mr-2 mb-2"></SplitButton>
                             </div>
                         }
                     </>
