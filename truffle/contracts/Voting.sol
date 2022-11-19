@@ -96,6 +96,17 @@ contract Voting is Ownable {
         return proposalsArray[_id];
     }
 
+    /// @notice Return the count of proposals
+    /// @return uint256 Count of proposals
+    function getProposalsArrayCount()
+        external
+        view
+        onlyVoters
+        returns (uint256)
+    {
+        return proposalsArray.length;
+    }
+
     // ::::::::::::: REGISTRATION ::::::::::::: //
 
     /// @notice Add a voter in the whitelist
