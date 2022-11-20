@@ -161,10 +161,10 @@ export default function TimelineComponent() {
     async function addVoter(inputAddVoter) {
         console.log("Voter à ajouter à la whitelist : " + inputAddProposal);
         try {
+            toast.current.show({ severity: 'info', summary: 'Information', detail: 'Transaction en cours' });
             // Ici le call avant le send permet de recupérer le require
             await contract.methods.addVoter(inputAddVoter).call({ from: accounts[0] });
             await contract.methods.addVoter(inputAddVoter).send({ from: accounts[0] });
-            toast.current.show({ severity: 'info', summary: 'Information', detail: 'Transaction en cours' });
             console.log("Ajout du voter " + inputAddVoter + " dans la whitelist");
         } catch (error) {
             let errorMsg = "'Erreur technique ! L'électeur n'a pas pu être enregistré'";
