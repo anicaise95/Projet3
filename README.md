@@ -1,40 +1,119 @@
-# React Truffle Box
+# Projet VOTING
 
-This box comes with everything you need to start using Truffle to write, compile, test, and deploy smart contracts, and interact with them from a React app.
+Cette DAPP est un système de vote de propositions sur la blockchain Ethereum. Le workflow est géré par l'administrateur.
+
+## Fonctionnalités de la DAPP
+
+- Enregistrement d’une liste blanche d'électeurs. 
+- L'administrateur commence la session d'enregistrement de la proposition.
+- Permettre aux électeurs inscrits d’enregistrer leurs propositions.
+- L'administrateur met fin à la session d'enregistrement des propositions.
+- L'administrateur commence la session de vote.
+- Permettre aux électeurs inscrits de voter pour leurs propositions préférées.
+- L'administrateur met fin à la session de vote.
+- L'administrateur comptabilise les votes.
+- Permettre à tout le monde de consulter le résultat.
 
 ## Installation
 
-First ensure you are in an empty directory.
-
-Run the `unbox` command using 1 of 2 ways.
-
 ```sh
-# Install Truffle globally and run `truffle unbox`
-$ npm install -g truffle
-$ truffle unbox react
+# Récupération des sources depuis Github
+$ git clone https://github.com/anicaise95/Projet3.git
 ```
 
 ```sh
-# Alternatively, run `truffle unbox` via npx
-$ npx truffle unbox react
+# Installation des dépendances Truffle
+$ cd truffle
+$ npm install
 ```
 
-Start the react dev server.
+```sh
+# Installation des dépendances du front 
+$ cd client
+$ npm install
+```
 
 ```sh
+# Installation des dépendances globales du projet 
+$ cd ..
+$ npm i
+```
+
+
+## Execution environnement local
+
+```sh
+# Dans un terminal, lancer la blockchain de développement Ganache (Installer Ganache au préalable si ce n'est pas fait)
+$ ganache
+```
+
+
+Déployer le smart contract sur la blockchain de développement Ganache.
+<ul>
+ <li>Vérifier la présence du smartcontract dans le répertoire truffle/contracts/<b>voting.sol</b></li>
+  <li>Vérifier la présence d'un fichier de migration dans truffle/migrations/1_xxxx.js</li>
+</ul>
+
+```sh
+# Dans un autre terminal :
+$ cd truffle
+$ truffle migrate --reset
+```
+
+Démarrer le serveur front de dev : 
+
+```sh
+# Dans un autre terminal :
 $ cd client
 $ npm start
-  Starting the development server...
+  Starting the development server ...
 ```
 
-From there, follow the instructions on the hosted React app. It will walk you through using Truffle and Ganache to deploy the `SimpleStorage` contract, making calls to it, and sending transactions to change the contract's state.
+Lancer la DAPP via <a href='http/localhost:3000/'>http/localhost:3000/</a>
 
-## FAQ
+## Déploiement du smart contract sur le testnet Goerli
 
-- __How do I use this with Ganache (or any other network)?__
+Le connecteur Infura Ethereum utilise l'API Infura JSON-RPC pour accéder à Ethereum.
 
-  The Truffle project is set to deploy to Ganache by default. If you'd like to change this, it's as easy as modifying the Truffle config file! Check out [our documentation on adding network configurations](https://trufflesuite.com/docs/truffle/reference/configuration/#networks). From there, you can run `truffle migrate` pointed to another network, restart the React dev server, and see the change take place.
+```sh
+# Créer le fichier /truffle/.env et renseigner :
+INFURA_ID=XXXXXXXXXXXXX
+MNEMONIC="XXXX XXXX XXXX XXXX XXXX XXX XXXXX XXXX"
+```
 
-- __Where can I find more resources?__
+INFURA_ID étant l'API KEY Infura
+MNEMONIC étant la SEED du wallet (Metamask)
 
-  This Box is a sweet combo of [Truffle](https://trufflesuite.com) and [Create React App](https://create-react-app.dev). Either one would be a great place to start!
+```sh
+# Vérifier que le réseau Goerli est bien paramétré dans le fichier truffle/truffle-config.js
+networks: {
+
+    development: {
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",       // Any network (default: none)
+    },
+    goerli: {
+      provider: function () {
+        return new HDWalletProvider(`${process.env.MNEMONIC}`, `https://goerli.infura.io/v3/${process.env.INFURA_ID}`)
+      },
+      network_id: 5,
+    }
+  }
+```
+
+```sh
+# Dans un terminal :
+$ cd truffle
+$ truffle migrate --network goerli 
+```
+
+## Déploiement du front (REACT) sur VERCEL
+
+La Dapp Voting a été déployée sur <a href='https://vercel.com/'>Vercel</a> et est accessible ici : <a href='https://projet3-henna.vercel.app/'>https://projet3-henna.vercel.app/</a>
+
+
+## Présenttation de l'application en vidéo (LOOM)
+
+Dans une petite video, je présente l'application : https://www.loom.com/share/9b84a6efde21420d99f64a93427c0125
+
