@@ -108,6 +108,9 @@ $ cd truffle
 $ truffle migrate --network goerli 
 ```
 
+## Tests unitaires
+
+
 ## Déploiement du front (REACT) sur VERCEL
 
 La Dapp Voting a été déployée sur <a href='https://vercel.com/'>Vercel</a> et est accessible ici : <a href='https://projet3-henna.vercel.app/'>https://projet3-henna.vercel.app/</a>
