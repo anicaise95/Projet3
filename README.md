@@ -120,3 +120,5 @@ La Dapp Voting a été déployée sur <a href='https://vercel.com/'>Vercel</a> e
 
 Dans une petite video, je présente l'application : https://www.loom.com/share/9b84a6efde21420d99f64a93427c0125
 
+
+>>>> INFORMATION IMPORTANTE : pas de fonction reset du sondage, il faut redéployer le contrat pour le réinitialier :( 
