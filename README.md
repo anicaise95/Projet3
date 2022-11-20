@@ -1,8 +1,21 @@
-# React Truffle Box
+# Projet VOTING
 
-This box comes with everything you need to start using Truffle to write, compile, test, and deploy smart contracts, and interact with them from a React app.
+Cette application est un système de vote de propositions. Le workflow est géré par l'administrateur.
+
+## FOnctionnalités de la DAPP
+
+Enregistrement d’une liste blanche d'électeurs. 
+à l'administrateur de commencer la session d'enregistrement de la proposition.
+aux électeurs inscrits d’enregistrer leurs propositions.
+à l'administrateur de mettre fin à la session d'enregistrement des propositions.
+à l'administrateur de commencer la session de vote.
+aux électeurs inscrits de voter pour leurs propositions préférées.
+à l'administrateur de mettre fin à la session de vote.
+à l'administrateur de comptabiliser les votes.
+à tout le monde de consulter le résultat.
 
 ## Installation
+
 
 First ensure you are in an empty directory.
 
@@ -28,6 +41,26 @@ $ npm start
 ```
 
 From there, follow the instructions on the hosted React app. It will walk you through using Truffle and Ganache to deploy the `SimpleStorage` contract, making calls to it, and sending transactions to change the contract's state.
+
+
+## Déploiement du smart contract sur le testnet Goerli
+
+
+```sh
+# Install Truffle globally and run `truffle unbox`
+$ cd truffle
+$ truffle migrate --reset
+```
+
+## Déploiement du front (REACT) sur VERCEL
+
+La Dapp est accessible ici 
+
+
+## Présenttation de l'application en vidéo (LOOM)
+
+https://www.loom.com/share/9b84a6efde21420d99f64a93427c0125
+
 
 ## FAQ
 
