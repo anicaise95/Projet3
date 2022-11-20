@@ -39,6 +39,7 @@
     ]
   },
   "devDependencies": {
-    "saas": "^1.0.0"
+    "saas": "^1.0.0",
+    "sass": "^1.56.1"
   }
 }
