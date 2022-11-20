@@ -1,13 +1,12 @@
 import { useRef, useEffect, useState } from "react";
 import Proposals from "./Proposals";
+import useEth from "../../../../contexts/EthContext/useEth";
 
+// Imports des CSS
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.css';
 import 'primeflex/primeflex.css';
-
-import useEth from "../../../../contexts/EthContext/useEth";
-
 
 // TIMELINE
 import { Timeline } from 'primereact/timeline';
@@ -17,29 +16,27 @@ import './Timeline.scss';
 // RAISED BUTTON
 import { SplitButton } from 'primereact/splitbutton';
 import { Toast } from 'primereact/toast';
-import { Owner } from '../../../../contexts/AppContext';
 // INPUT 1 BUTTONS
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import './../../../../../../client/src/asset/styles/primefaces/button.scss';
 
+export default function TimelineComponent(props) {
 
-export default function TimelineComponent() {
-
-    const activeColor = '#9C27B0';
-    const inactiveColor = '#CCC';
     const { state: { contract, accounts } } = useEth();
+    const isOwner = (accounts[0] === props.contractOwner);
 
     const [inputAddVoter, setInputAddVoter] = useState("");
     const [inputAddProposal, setInputAddProposal] = useState("");
     const [proposalsArray, setProposalsArray] = useState([]);
-    const isOwner = (accounts[0] === Owner);
     const [voter, setVoter] = useState(undefined);
     const [winner, setWinner] = useState();
     const [previousStatus, setPreviousStatus] = useState(0);
     const [newStatus, setNewStatus] = useState(0);
     const [selectedProposal, setSelectedProposal] = useState(0);
     const [proposalsArrayCount, setProposalsArrayCount] = useState(0);
+    const activeColor = '#9C27B0';
+    const inactiveColor = '#CCC';
 
     const getCurrentkWorkflowStatus = async () => {
         const currentWorkflow = await contract.methods.workflowStatus().call({ from: accounts[0] });
@@ -96,9 +93,6 @@ export default function TimelineComponent() {
                         if (newStatus >= 0) {
                             fetchProposalsArray();
                         }
-                        if (newStatus == 5) {
-                            getWinner();
-                        }
                     } else {
                         console.log("Compte absent de la whitelist");
                     }
@@ -144,7 +138,6 @@ export default function TimelineComponent() {
         try {
             // Index de la proposition ayant reçue le plus devotes
             const winningProposalID = await contract.methods.winningProposalID().call({ from: accounts[0] });
-            console.log('winningProposalID :' + winningProposalID);
             // Récupération de la proposition correspondante
             const proposal = await contract.methods.getOneProposal(winningProposalID).call({ from: accounts[0] });
             const desc = proposal.description;
@@ -325,6 +318,7 @@ export default function TimelineComponent() {
         try {
             await contract.methods.tallyVotes().call({ from: accounts[0] });
             await contract.methods.tallyVotes().send({ from: accounts[0] });
+            getWinner();
             checkWorkflowStatus("tallyVotes");
         } catch (error) {
             if (error.message.includes("Current status is not voting session ended")) {

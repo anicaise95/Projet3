@@ -3,7 +3,6 @@ import { RadioButton } from 'primereact/radiobutton';
 function Proposals(props) {
 
     function handleChangeSelectedProposal(value) {
-        // Here, we invoke the callback with the new value
         props.onChange(value);
     }
 
