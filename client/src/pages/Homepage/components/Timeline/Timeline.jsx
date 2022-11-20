@@ -50,18 +50,32 @@ export default function TimelineComponent() {
     // Si le depuillement est fait on affiche le vainquer
     useEffect(() => {
         console.log("Détection d'un nouveau gagnant >> getWinner ");
-        if (newStatus == 5) {
-            getWinner();
-        } else {
-            fetchProposalsArray();
+        getCurrentkWorkflowStatus();
+
+        if (!isOwner) {
+            getVoter();
+            if (voter != undefined) {
+                fetchProposalsArray();
+            }
+            if (newStatus == 5) {
+                getWinner();
+            }
         }
+
     }, [newStatus]);
 
     // Si le tableau de propositions augmente on raffraichit la liste des propositions
     useEffect(() => {
-        console.log("Détection d'une nouvelle proposition >> Récupération des propositions ");
-        if (newStatus >= 1) {
-            fetchProposalsArray();
+        getCurrentkWorkflowStatus();
+        if (!isOwner) {
+            getVoter();
+            console.log("Détection d'une nouvelle proposition >> Récupération des propositions ");
+            if (voter != undefined) {
+                fetchProposalsArray();
+            }
+            if (newStatus == 5) {
+                getWinner();
+            }
         }
     }, [proposalsArrayCount, selectedProposal]);
 
@@ -79,16 +93,15 @@ export default function TimelineComponent() {
 
                     if (voter != undefined) {
                         console.log("Compte enregistré sur la whiteList : " + voter);
-                        if (newStatus >= 1) {
+                        if (newStatus >= 0) {
                             fetchProposalsArray();
                         }
-                        /*if (newStatus == 5) {
+                        if (newStatus == 5) {
                             getWinner();
-                        }*/
+                        }
                     } else {
                         console.log("Compte absent de la whitelist");
                     }
-
                 } catch (error) {
                     toast.current.show({ severity: 'error', summary: 'Updated', detail: 'Vous n\'êtes pas enregistré par le owner' });
                     console.log(accounts[0] + " n'est pas enregistré");
